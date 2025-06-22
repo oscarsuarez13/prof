@@ -1,0 +1,88 @@
+from zipfile import ZipFile
+from pathlib import Path
+
+# Crear el contenido HTML
+html_content = """
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Asistencia QR</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f3f3f3;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Escáner de Código QR - Asistencia</h1>
+  <div id="reader"></div>
+  <div id="status"></div>
+
+  <script>https://script.google.com/macros/s/AKfycbxG13xU60XUaGdN8dSnlNP9hiAEb7WVo9CX-jV96s9Y/dev
+    const scriptUrl = 
+
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById("status").innerText = "QR leído, registrando...";
+      const url = new URL(decodedText);
+      const nombre = url.searchParams.get("nombre");
+      const codigo = url.searchParams.get("codigo");
+
+      if (nombre && codigo) {
+        fetch(`${scriptUrl}?nombre=${encodeURIComponent(nombre)}&codigo=${encodeURIComponent(codigo)}`)
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("status").innerText = data;
+          })
+          .catch(error => {
+            document.getElementById("status").innerText = "Error en el registro.";
+            console.error(error);
+          });
+      } else {
+        document.getElementById("status").innerText = "QR no válido.";
+      }
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      onScanSuccess
+    ).catch(err => {
+      document.getElementById("status").innerText = "Error iniciando escáner: " + err;
+    });
+  </script>
+</body>
+</html>
+"""
+
+# Guardar el archivo HTML
+output_dir = Path("/mnt/data/registro_qr_web")
+output_dir.mkdir(parents=True, exist_ok=True)
+html_path = output_dir / "index.html"
+html_path.write_text(html_content, encoding="utf-8")
+
+# Crear archivo ZIP
+zip_path = Path("/mnt/data/registro_qr_web.zip")
+with ZipFile(zip_path, 'w') as zipf:
+    zipf.write(html_path, arcname="index.html")
+
+zip_path.name  # Nombre del archivo ZIP creado para compartir con el usuario
+
